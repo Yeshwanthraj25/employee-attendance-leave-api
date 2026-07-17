@@ -1,0 +1,72 @@
+@startuml Employee_Attendance_System_ER
+
+
+entity "Employee" as employee {
+  * emp_id : UUID <<PK>>
+  --
+  * email_id : VARCHAR <<unique>>
+  * password : VARCHAR
+  * phone_number : VARCHAR
+  * role : ENUM(admin, manager, employee)
+  * dep_id : UUID <<FK>>
+  *manager_id : UUID <<FK, self-ref -> employee.emp_id>>
+  --
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "Log_Attendance" as attendance {
+  * log_id : UUID <<PK>>
+  --
+  * emp_id : UUID <<FK>>
+  log_in_time : TIMESTAMP
+  log_out_time : TIMESTAMP
+  status : ENUM(present, absent, half-day)
+  --
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "Leave_Management" as leave {
+  * leave_id : UUID <<PK>>
+  --
+  * emp_id : UUID <<FK>>
+  leave_reason : TEXT
+  leave_type : ENUM(sick, casual)
+  status : ENUM(pending, approved, rejected)
+  start_date : DATE
+  end_date : DATE
+  --
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "Department" as department {
+  * dep_id : UUID <<PK>>
+  --
+  * dep_name : VARCHAR
+    --
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+entity "Leave_Quote" as Leave_quote{
+  *quote_id : UUID <<PK>>
+  *emp_id: UUID <<FK>>
+  sick_leave_allotted  : INT
+  *sick_leave_remaining : INT
+  *casual_leave_allotted  : INT
+  *casual_leave_remaining : INT
+  *year: INT
+  --
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+
+}
+
+employee }o--|| department : "belongs to"
+employee }o--o| employee : "reports to (manager_id)"
+attendance }o--|| employee : "logged by"
+leave }o--|| employee : "requested by"
+employee ||--o{ Leave_quote
+
+@enduml

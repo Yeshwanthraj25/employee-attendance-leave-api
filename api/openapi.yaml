@@ -1,0 +1,599 @@
+openapi: 3.0.0
+info:
+  title: Employee Attendance & Leave Management API
+  version: 1.0.0
+  description: |
+    API documentation for the Employee Attendance & Leave Management System.
+
+    This API handles employee registration/auth, daily attendance logging,
+    leave application and approval workflows, yearly leave quota tracking,
+    and department management.
+
+    Auth APIs:
+    - POST /auth/register — Register a new employee
+    - POST /auth/login — Authenticate and issue JWT tokens
+    - POST /auth/refresh — Refresh an expired access token
+    - GET /auth/me — Get current authenticated employee
+
+    Attendance APIs:
+    - POST /attendance/check-in — Log check-in for today
+    - PATCH /attendance/check-out — Log check-out for today's entry
+    - GET /attendance/me — View own attendance history
+    - GET /attendance/team — Manager view of team attendance
+    - GET /attendance/report — Monthly attendance percentage report
+
+    Leave Management APIs:
+    - POST /leave/apply — Apply for leave
+    - PATCH /leave/{leave_id}/approve — Approve a leave request
+    - PATCH /leave/{leave_id}/reject — Reject a leave request
+    - GET /leave/me — View own leave history
+    - GET /leave/team — Manager view of team leave requests
+
+    Leave Quote APIs:
+    - POST /leave-quote — Create yearly quota for an employee (admin only)
+    - GET /leave-quote/me — View own quota for current year
+
+    Department APIs:
+    - POST /department — Create a department (admin only)
+    - GET /department — List all departments
+  contact:
+     name: Yeshwanth
+     email: your-email@example.com
+
+servers:
+  - url: /api/v1
+
+tags:
+  - name: Auth
+  - name: Attendance
+  - name: Leave Management
+  - name: Leave Quote
+  - name: Department
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new employee
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email_id, password, phone_number, dep_id]
+              properties:
+                email_id: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                phone_number: { type: string }
+                dep_id: { type: string, format: uuid }
+                role: { type: string, enum: [employee, manager, admin], default: employee }
+      responses:
+        '201':
+          description: Employee registered successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+              examples:
+                success:
+                  value:
+                    status: success
+                    code: 201
+                    message: Employee registered successfully
+                    data:
+                      emp_id: emp-a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      email_id: employee@company.com
+                      role: employee
+                    errors: []
+                    timestamp: "2026-07-15T10:00:00.000Z"
+                    request_id: req-c3d4e5f6-a7b8-9012-cdef-345678901234
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate employee and issue JWT tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email_id, password]
+              properties:
+                email_id: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+              examples:
+                success:
+                  value:
+                    status: success
+                    code: 200
+                    message: Login successful
+                    data:
+                      access_token: "<jwt>"
+                      refresh_token: "<jwt>"
+                      token_type: bearer
+                    errors: []
+                    timestamp: "2026-07-15T10:00:00.000Z"
+                    request_id: req-...
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh an access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current authenticated employee
+      responses:
+        '200':
+          description: Employee fetched successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /attendance/check-in:
+    post:
+      tags: [Attendance]
+      summary: Check in for today (emp_id derived from JWT)
+      responses:
+        '201':
+          description: Check-in recorded successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+              examples:
+                success:
+                  value:
+                    status: success
+                    code: 201
+                    message: Check-in recorded successfully
+                    data:
+                      log_id: log-a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      emp_id: emp-b2c3d4e5-f6a7-8901-bcde-f234567890
+                      log_in_time: "2026-07-15T09:15:00.000Z"
+                      log_out_time: null
+                      status: present
+                    errors: []
+                    timestamp: "2026-07-15T09:15:00.000Z"
+                    request_id: req-...
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /attendance/check-out:
+    patch:
+      tags: [Attendance]
+      summary: Check out for today (server looks up today's row by emp_id)
+      responses:
+        '200':
+          description: Check-out recorded successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /attendance/me:
+    get:
+      tags: [Attendance]
+      summary: Get own attendance history
+      parameters:
+        - name: start_date
+          in: query
+          schema: { type: string, format: date }
+        - name: end_date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Attendance history fetched
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /attendance/team:
+    get:
+      tags: [Attendance]
+      summary: Manager view of team attendance
+      parameters:
+        - name: start_date
+          in: query
+          schema: { type: string, format: date }
+        - name: end_date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Team attendance fetched
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /attendance/report:
+    get:
+      tags: [Attendance]
+      summary: Monthly attendance percentage report
+      parameters:
+        - name: emp_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: month
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 12 }
+        - name: year
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Attendance report generated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /leave/apply:
+    post:
+      tags: [Leave Management]
+      summary: Apply for leave (balance checked against current-year remaining quota)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [leave_type, leave_reason, start_date, end_date]
+              properties:
+                leave_type: { type: string, enum: [sick, casual] }
+                leave_reason: { type: string, maxLength: 250 }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+      responses:
+        '201':
+          description: Leave request submitted successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+              examples:
+                success:
+                  value:
+                    status: success
+                    code: 201
+                    message: Leave request submitted successfully
+                    data:
+                      leave_id: leave-a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      emp_id: emp-b2c3d4e5-f6a7-8901-bcde-f234567890
+                      leave_type: sick
+                      status: pending
+                      start_date: "2026-07-20"
+                      end_date: "2026-07-21"
+                    errors: []
+                    timestamp: "2026-07-15T10:30:00.000Z"
+                    request_id: req-...
+                insufficient_balance:
+                  value:
+                    status: error
+                    code: 400
+                    message: Insufficient sick leave balance
+                    data: {}
+                    errors:
+                      - field: leave_type
+                        issue: "Requested 2 days, only 1 remaining"
+                    timestamp: "2026-07-15T10:30:00.000Z"
+                    request_id: req-...
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /leave/{leave_id}/approve:
+    patch:
+      tags: [Leave Management]
+      summary: Approve a leave request (decrements Leave_Quote remaining balance in same transaction)
+      parameters:
+        - name: leave_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Leave approved successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /leave/{leave_id}/reject:
+    patch:
+      tags: [Leave Management]
+      summary: Reject a leave request (no Leave_Quote write)
+      parameters:
+        - name: leave_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Leave rejected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /leave/me:
+    get:
+      tags: [Leave Management]
+      summary: Get own leave history
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, approved, rejected] }
+        - name: year
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Leave history fetched
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /leave/team:
+    get:
+      tags: [Leave Management]
+      summary: Manager view of team leave requests
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, approved, rejected] }
+      responses:
+        '200':
+          description: Team leave requests fetched
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /leave-quote:
+    post:
+      tags: [Leave Quote]
+      summary: Create yearly leave quota for an employee (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [emp_id, year, sick_leave_allotted, casual_leave_allotted]
+              properties:
+                emp_id: { type: string, format: uuid }
+                year: { type: integer }
+                sick_leave_allotted: { type: integer }
+                casual_leave_allotted: { type: integer }
+      responses:
+        '201':
+          description: Leave quota created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /leave-quote/me:
+    get:
+      tags: [Leave Quote]
+      summary: Get own leave quota
+      parameters:
+        - name: year
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Leave quota fetched
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /department:
+    post:
+      tags: [Department]
+      summary: Create a department (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dep_name]
+              properties:
+                dep_name: { type: string }
+      responses:
+        '201':
+          description: Department created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    get:
+      tags: [Department]
+      summary: List all departments
+      responses:
+        '200':
+          description: Departments fetched
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        status: { type: string, enum: [success, error] }
+        code: { type: integer }
+        message: { type: string }
+        data: { type: object }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              issue: { type: string }
+        timestamp: { type: string, format: date-time }
+        request_id: { type: string }
+
+  responses:
+    BadRequest:
+      description: Bad Request — validation or business rule failure
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+          example:
+            status: error
+            code: 400
+            message: Invalid request
+            data: {}
+            errors:
+              - field: field_name
+                issue: description of what is wrong
+            timestamp: "2026-07-15T10:00:00.000Z"
+            request_id: req-...
+
+    Unauthorized:
+      description: Unauthorized — missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+          example:
+            status: error
+            code: 401
+            message: Authentication required
+            data: {}
+            errors:
+              - field: authorization
+                issue: Token missing or expired
+            timestamp: "2026-07-15T10:00:00.000Z"
+            request_id: req-...
+
+    Forbidden:
+      description: Forbidden — authenticated but not permitted
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+          example:
+            status: error
+            code: 403
+            message: You do not have permission to perform this action
+            data: {}
+            errors:
+              - field: role
+                issue: Requires manager or admin role
+            timestamp: "2026-07-15T10:00:00.000Z"
+            request_id: req-...
+
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+          example:
+            status: error
+            code: 404
+            message: Resource not found
+            data: {}
+            errors:
+              - field: id
+                issue: No matching record found
+            timestamp: "2026-07-15T10:00:00.000Z"
+            request_id: req-...
+
+    InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+          example:
+            status: error
+            code: 500
+            message: An unexpected error occurred. Please try again later.
+            data: {}
+            errors: []
+            timestamp: "2026-07-15T10:00:00.000Z"
+            request_id: req-...
