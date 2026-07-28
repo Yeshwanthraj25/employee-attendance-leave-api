@@ -63,6 +63,17 @@ entity "Leave_Quote" as Leave_quote{
 
 }
 
+entity "ErrorLog" as error_log{
+  *log_id: UUID <<PK>>
+  *file_name: VARCHAR(255)
+  *function_name: VARCHAR(255)
+  *status_code: INT 
+  *log_data : TEXT 
+  *error_details: TEXT
+  --
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
 employee }o--|| department : "belongs to"
 employee }o--o| employee : "reports to (manager_id)"
 attendance }o--|| employee : "logged by"

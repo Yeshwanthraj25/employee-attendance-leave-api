@@ -75,4 +75,16 @@ class LeaveQuote(Base):
     employee =relationship("Employee",back_populates="quote")
 
 
+class ErrorLog(Base):
+    __tablename__ = "error_log"
+    log_id = Column(UUID,primary_key = True,default= uuid4)
+    file_name = Column(String,nullable= False)
+    function_name = Column(String,nullable = False)
+    status_code = Column(Integer,nullable= False)
+    log_data = Column(String,nullable = False)
+    error_data = Column(String,nullable = False)
+    created_at = Column(Datetime,default=func.now())
+    updated_at = Column(Datetime)
+
+
 
