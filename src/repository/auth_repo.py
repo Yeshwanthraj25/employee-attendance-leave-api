@@ -1,7 +1,6 @@
 
 from sqlalchemy import select
 from src.repository.schema.schema import Employee,LogAttendance,Department,LeaveManagement,LeaveQuote,ErrorLog
-from fastapi import HTTPException,status
 from src.models.dto.exception  import AppException
 
 
