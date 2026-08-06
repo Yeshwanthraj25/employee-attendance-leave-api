@@ -1,20 +1,29 @@
 from src.repository.auth_repo import get_user_by_email,create_user
-from models.dto.exception import AppException
+from src.models.dto.exception import AppException
 from src.core.security import create_token,refresh_token,verify_token
 from src.repository.auth_repo import get_user
-from passlib.context import CryptContext
+import bcrypt
 from jose import JWTError
-pwd_context = CryptContext(schemes=["bcrypt"],deprecated="auto")
+from src.models.output_model import RegisterResponse
+
 
 
 async  def register_service(db,email_id,password,phone_number,dep_id,role):
     try:
         user_checked = await get_user_by_email(db,email_id)
         if user_checked is not None:
-            raise AppException("auth_service","register_user",409,"User already exist",None)
-        password = pwd_context.hash(password)
+              raise AppException("auth_service","register_user",409,"User already exist",None)
+        gen_pass = bcrypt.gensalt(rounds=12)
+        password = bcrypt.hashpw(password.encode(),gen_pass).decode()
+        
         registered = await create_user(db,email_id,password,phone_number,dep_id,role)
-        return registered
+        return RegisterResponse(emp_id=str(registered.emp_id),
+                    email_id=registered.email_id,
+                    phone_number=registered.phone_number,
+                    role=registered.role,
+                    dep_id=str(registered.dep_id))
+    except AppException:
+        raise 
     except Exception as e :
         raise AppException("auth_service","register_user",500,"InternalError",str(e))
 
@@ -22,7 +31,7 @@ async def login_service(db,email_id,password):
     user_checked = await get_user_by_email(db,email_id)
     if user_checked is None:
             raise AppException("auth_service","login_user",401,"Invalid creditial",None)
-    if not pwd_context.verify(password,user_checked.password):
+    if not bcrypt.verify(password,user_checked.password):
          raise AppException("auth_service","login_user",401,"Invalid Password",None)
     emp_id = user_checked.emp_id
     role = user_checked.role

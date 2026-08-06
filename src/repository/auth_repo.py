@@ -21,17 +21,16 @@ async def get_user_by_email(db,email):
         query = select(Employee).where (Employee.email_id == email )
         result = await db.execute(query)
         user = result.scalars().first()
-        if not user:
-            raise   AppException("auth_repo","get_user_by_email",404,"user not found",None)
         return user
     except Exception as e :
         raise AppException("auth_repo","get_user_by_email",500,"DB error ",str(e))
 
 async def create_user(db,email_id,password,phone_number,dep_id,role):
     try:
-        insert = Employee(email_id=email_id,password=password,phone_number =phone_number,dep_id=dep_id,role=role)
+        insert = Employee(email_id=email_id,password=password,phone_number =phone_number,manager_id = None ,dep_id=dep_id,role=role)
         db.add(insert)
         await db.flush()
+        await db.commit()
         return insert
     except Exception as e :
         raise AppException("auth_repo","create_user",500,"DB error ",str(e))
