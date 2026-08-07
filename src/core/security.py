@@ -37,16 +37,20 @@ def verify_token(token:str):
 # create a shoet span token 
 
 def create_token(emp_id: str,role:str):
-    data ={"sub":emp_id,"role":role}
-    expire = timedelta(days=setting.ACCESS_TOKEN_EXPIRE_MINUTES) 
-    return create_token(data,expire)
+    data ={"sub":str(emp_id),"role":role}
+    expire = datetime.now() + timedelta(minutes=setting.ACCESS_TOKEN_EXPIRE_MINUTES)
+    data.update({"exp":expire})
+    jwt_encode = jwt.encode(data,setting.JWT_SECRET_KEY,algorithm= setting.JWT_ALGORITHM)
+    return jwt_encode
 
 # create a refresh token (long span)
 
-def refresh_token(emp_id: str,role:str):
-    data ={"sub":emp_id,"role":role}
-    expire = timedelta(days=setting.REFRESH_TOKEN_EXPIRE_DAYS) 
-    return create_token(data,expire)
+def refresh_token(emp_id: str):
+    data ={"sub":str(emp_id),"type": "refresh"}
+    expire = datetime.now() + timedelta(minutes=setting.ACCESS_TOKEN_EXPIRE_MINUTES) 
+    data.update({"exp":expire})
+    encode_jwt = jwt.encode(data,setting.JWT_SECRET_KEY,algorithm= setting.JWT_ALGORITHM)
+    return encode_jwt
 
 
 

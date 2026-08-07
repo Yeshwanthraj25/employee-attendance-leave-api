@@ -19,4 +19,13 @@ class RegisterResponse(BaseModel):
     role : str
     dep_id : str 
 
+class LoginResponse(BaseModel):
+    access_token: str 
+    refresh_token : str
+    user_id : str
+    role : str
+
+
+class RefreshToken(BaseModel):
+    refresh_token : str
 

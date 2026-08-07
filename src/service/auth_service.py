@@ -4,7 +4,7 @@ from src.core.security import create_token,refresh_token,verify_token
 from src.repository.auth_repo import get_user
 import bcrypt
 from jose import JWTError
-from src.models.output_model import RegisterResponse
+from src.models.output_model import RegisterResponse,LoginResponse,RefreshToken
 
 
 
@@ -28,16 +28,21 @@ async  def register_service(db,email_id,password,phone_number,dep_id,role):
         raise AppException("auth_service","register_user",500,"InternalError",str(e))
 
 async def login_service(db,email_id,password):
-    user_checked = await get_user_by_email(db,email_id)
-    if user_checked is None:
-            raise AppException("auth_service","login_user",401,"Invalid creditial",None)
-    if not bcrypt.verify(password,user_checked.password):
-         raise AppException("auth_service","login_user",401,"Invalid Password",None)
-    emp_id = user_checked.emp_id
-    role = user_checked.role
-    get_acess =  create_token(emp_id,role)
-    get_refresh = refresh_token(emp_id,role)
-    return get_acess,get_refresh,user_checked
+    try:
+        user_checked = await get_user_by_email(db,email_id)
+        if user_checked is None:
+                raise AppException("auth_service","login_user",401,"Invalid creditial",None)
+        if not bcrypt.checkpw(password.encode(),user_checked.password.encode()):
+            raise AppException("auth_service","login_user",401,"Invalid Password",None)
+        emp_id = user_checked.emp_id
+        role = user_checked.role
+        get_access =  create_token(emp_id,role)
+        get_refresh = refresh_token(emp_id)
+        return  LoginResponse(access_token = get_access,refresh_token = get_refresh,user_id = str(emp_id) , role = role)
+    except AppException:
+            raise 
+    except Exception as e :
+            raise AppException("auth_service","login_user",500,"InternalError",str(e))
 
 async def refresh_token_service(db,token):
     try:
@@ -45,8 +50,8 @@ async def refresh_token_service(db,token):
         emp_id = verify["sub"]
         role = await get_user(db,emp_id)
         role = role.role
-        new_acesss = create_token(emp_id,role)
-        return new_acesss
+        new_acess = create_token(emp_id,role)
+        return  RefreshToken(refresh_token = new_acess)
     except JWTError :
          raise AppException("auth_service","refresh_token_service",500,"JWTError",None)
 
