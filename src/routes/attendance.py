@@ -123,7 +123,7 @@ async def get_attendance(db = Depends(get_db),start_date : date = None,end_date:
 async def team_attendance(db = Depends(get_db),start_date : date = None,end_date: date = None):
     try:
         current_user = get_current_user()
-        get_team_history = await get_team_a@ttendance_service(db,current_user.emp_id,start_date,end_date)
+        get_team_history = await get_team_attendance_service(db,current_user.emp_id,start_date,end_date)
         response_dict  = get_team_history.model_dump(mode='json')
         api_response = API_response(response_dict,200,"Succesful check in","success")
         return  JSONResponse(status_code =200,content = api_response.model_dump(mode='json'))

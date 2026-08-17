@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from uuid import UUID
+from datetime import date
 
 class  RegisterRequest(BaseModel):
     email_id : str
@@ -15,4 +16,9 @@ class LoginRequest(BaseModel):
 class RefreshToken(BaseModel):
     refresh_token:str
 
+class ApplyLeave(BaseModel):
+    leave_type : str
+    leave_reason : str
+    start_date : date
+    end_date : date
 
