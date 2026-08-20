@@ -11,7 +11,7 @@ from src.models.input_models import ApplyLeave
 from fastapi import APIRouter,Depends
 from datetime import datetime,date
 
-app = APIRouter("/leave",tags=['leave'])
+app = APIRouter(prefix = "/leave",tags=['leave'])
 
 @app.post("/apply")
 async def apply_leave(apply:ApplyLeave, db = Depends(get_db),current =Depends( get_current_user)):

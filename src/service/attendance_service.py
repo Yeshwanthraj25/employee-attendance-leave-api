@@ -1,6 +1,5 @@
-from src.repository.attendance_repo import get_today_log,create_check_in,get_attendance_history,get_team_attendance,update_attendance_log
+from src.repository.attendance_repo import get_today_log,create_check_in,update_attendance_log,get_attendance_history_repo,get_team_attendance_repo
 from src.models.dto.exception import AppException
-
 
 async def check_in_service(db,emp_id):
     try:
@@ -32,11 +31,11 @@ async def check_out_service(db,emp_id):
                 log_id = today_log.log_id
                 updated = await  update_attendance_log(db,log_id)  
                 return {
-            "log_id": str(updated_log.log_id),
-            "emp_id": str(updated_log.emp_id),
-            "log_in_time": updated_log.log_in_time,
-            "log_out_time": updated_log.log_out_time,
-            "status": updated_log.status
+            "log_id": str(updated.log_id),
+            "emp_id": str(updated.emp_id),
+            "log_in_time": updated.log_in_time,
+            "log_out_time": updated.log_out_time,
+            "status": updated.status
         }
         except AppException:
             raise
@@ -45,7 +44,7 @@ async def check_out_service(db,emp_id):
 
 async def get_attendance_history_service(db,emp_id,start_date,end_date):
         try:
-            attendance_history = await  get_team_attendance(db,emp_id,start_date,end_date)
+            attendance_history = await  get_attendance_history_repo(db,emp_id,start_date,end_date)
             return [
             {
                 "log_id": str(log.log_id),
@@ -56,21 +55,34 @@ async def get_attendance_history_service(db,emp_id,start_date,end_date):
             }
             for log in attendance_history
         ]
+        except AppException:
+            raise
         except Exception as e :
             raise AppException("attendance_service","get_attendance_history",500,"Internal Error",str(e))
 
-async def get_team_attendance_service(db,manager_id,role,start_date,end_date):
-        try:
-            if role not in ['manager','admin']:
-                 raise AppException("attendance_service","get_team_attendance",403,"only manager can view team attendance")
-            team_attendance = await  get_attendance_history(db,manager_id,start_date,end_date)
-            return [{
-                 "log_id": str(log.log_id )
+
+async def get_team_attendance_service(db, manager_id, role, start_date, end_date):
+    try:
+        if role not in ['manager', 'admin']:
+            raise AppException("attendance_service", "get_team_attendance_service", 403, "Only managers can view team attendance", None)
+        
+        team_attendance = await get_team_attendance_repo(db, manager_id, start_date, end_date)
+        
+        return [
+            {   
+                "email_id": email_id,
+                "log_id": str(log.log_id),
+                "emp_id": str(log.emp_id),
+                "log_in_time": log.log_in_time,
+                "log_out_time": log.log_out_time,
+                "status": log.status
             }
-            for log in team_attendance
-            ]
-        except Exception as e :
-            raise AppException("attendance_service","get_attendance_history",500,"Internal Error",str(e))
+            for log ,email_id in team_attendance
+        ]
+    except AppException:
+        raise
+    except Exception as e:
+        raise AppException("attendance_service", "get_team_attendance_service", 500, "Internal error", str(e))
 
 
 
