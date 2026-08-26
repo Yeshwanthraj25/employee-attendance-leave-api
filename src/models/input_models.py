@@ -22,3 +22,11 @@ class ApplyLeave(BaseModel):
     start_date : date
     end_date : date
 
+
+class LeaveQuote(BaseModel):
+    emp_id : UUID
+    year: int
+    sick_leave_allotted: int
+    sick_leave_remaining: int
+    casual_leave_allotted: int
+    casual_leave_remaining : int

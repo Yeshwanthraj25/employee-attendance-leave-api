@@ -18,7 +18,8 @@ router = APIRouter(prefix ="/attendance",tags=["Attendance"])
 async def check_in_route(db = Depends(get_db),current_user=Depends(get_current_user)):
     try:
         check_in = await check_in_service(db,current_user.emp_id)
-        api_response = API_response(check_in,200,"Succesful check in","success")
+        response_dict = check_in.model_dump(mode='json')
+        api_response = API_response(response_dict,200,"Succesful check in","success")
         return  JSONResponse(status_code =200,content = api_response.model_dump(mode='json'))
     except Exception as e :
         if isinstance(e,AppException):
@@ -51,7 +52,8 @@ async def check_in_route(db = Depends(get_db),current_user=Depends(get_current_u
 async def check_out_route(db = Depends(get_db),current_user=Depends(get_current_user)):
     try:
         check_out = await check_out_service(db,current_user.emp_id)
-        api_response = API_response(check_out,200,"Succesful check  out","success")
+        response_dict = check_out.model_dump(mode='json')
+        api_response = API_response(response_dict,200,"Succesful check  out","success")
         return  JSONResponse(status_code =200,content = api_response.model_dump(mode='json'))
     except Exception as e :
         if isinstance(e,AppException):
@@ -87,6 +89,7 @@ async def get_attendance(db = Depends(get_db),start_date : date = None,end_date:
         api_response = API_response(get_history,200,"Retrieve the attendance history","success")
         return  JSONResponse(status_code =200,content = api_response.model_dump(mode='json'))
     except Exception as e :
+        print(f'the route error is str{e}')
         if isinstance(e,AppException):
             error_schema = ErrorCreation(
                                           log_id = uuid4(),

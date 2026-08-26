@@ -1,7 +1,7 @@
 from sqlalchemy import select,update,func
 from src.repository.schema.schema import Employee,LogAttendance,Department,LeaveManagement,LeaveQuote,ErrorLog
 from src.models.dto.exception  import AppException
-
+from datetime import date 
 
 
 async def create_leave_request(db,emp_id,leave_type,leave_reason,start_date,end_date):
@@ -41,7 +41,7 @@ async def get_leave_history(db, emp_id, status=None, year=None):
 
 async def update_leave_status(db, leave_id, status):
     try :
-        query = update(LeaveManagement).where(LeaveManagement.leave_id == leave_id).values(status = status )
+        query = update(LeaveManagement).where(LeaveManagement.leave_id == leave_id).values(status = status,updated_at = date.today() )
         await db.execute(query)
         await db.commit()
         return query
@@ -65,12 +65,13 @@ async def update_leave_quote(db, emp_id, leave_type, days_to_deduct, year):
 
 async def get_leave_quote(db,emp_id,year):
     try:
-        query = select(LeaveQuote).where(LeaveQuote.emp_id == emp_id) & (LeaveQuote.year ==year)
+        query = select(LeaveQuote).where((LeaveQuote.emp_id == emp_id) & (LeaveQuote.year ==year))
         result = await db.execute(query)
-        leave_quote = result.scalars().all()
+        leave_quote = result.scalars().first()
         return leave_quote
     except Exception as e:
-            raise AppException("leave_repo","get_leave_quote",500,"Internal error",str(e))
+            print(f" debug {str(e)}")
+            raise AppException("leave_repo","get_leave_quote",500,"Internal error DB repo error ",str(e))
 
 async def get_team_leave_history(db,manager_id,status=None,year = None ):
     try:
@@ -87,7 +88,20 @@ async def get_team_leave_history(db,manager_id,status=None,year = None ):
         
     except Exception as e:
             raise AppException("leave_repo","get_team_leave_history",500,"Internal error",str(e))
-    
 
-
-
+async def insert_leave_quote(db, emp_id, year, sick_leave_allotted, sick_leave_remaining, casual_leave_allotted, casual_leave_remaining):
+    try:
+        query = LeaveQuote(
+            emp_id=emp_id,
+            year=year,
+            sick_leave_allotted=sick_leave_allotted,
+            sick_leave_remaining=sick_leave_remaining,
+            casual_leave_allotted=casual_leave_allotted,  # allotted, not allocated
+            casual_leave_remaining=casual_leave_remaining
+        )
+        db.add(query)
+        await db.flush()
+        await db.commit()
+        return query
+    except Exception as e:
+        raise AppException("leave_repo", "insert_leave_quote", 500, "Internal error", str(e))

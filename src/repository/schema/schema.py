@@ -66,8 +66,9 @@ class LeaveQuote(Base):
     __tablename__ ="leave_quote"
     quote_id= Column(UUID,primary_key =True,default=uuid4)
     emp_id = Column(UUID,ForeignKey("employee.emp_id"),default=uuid4)
-    sick_leave_allocated = Column(Integer,nullable=False)
-    casual_leave_allocated = Column(Integer,nullable=False)
+    sick_leave_allotted = Column(Integer,nullable=False)
+    sick_leave_remaining = Column(Integer,nullable=False)
+    casual_leave_allotted = Column(Integer,nullable=False)
     casual_leave_remaining = Column(Integer,nullable=False)
     year= Column(Integer,nullable=True)
     created_at = Column(DateTime,default=func.now())
