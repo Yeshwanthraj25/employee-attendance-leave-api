@@ -1,8 +1,17 @@
 from datetime import datetime,timedelta
 from jose import JWTError,jwt
 from src.setting import Settings
-
+import bcrypt
 setting = Settings()
+
+
+
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt"""
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode(), salt)
+    return hashed.decode()
+
 
 # encode the jwt 
 

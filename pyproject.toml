@@ -15,5 +15,19 @@ dependencies = [
     "sqlalchemy>=2.0.51",
     "uvicorn[standard]>=0.51.0",
 ]
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "pytest-cov",
+]
+
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "pytest-cov",
+]
 [tool.fastapi]
 entrypoint = "src.main:app"
