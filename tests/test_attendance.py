@@ -141,3 +141,21 @@ class TestAttendance:
         )
         assert response.status_code == 403
         assert "only managers" in response.json()["message"].lower()
+    @pytest.mark.asyncio
+    async def test_get_team_attendance_with_filters(self, client, manager_token):
+        """Test manager can filter team attendance"""
+        response = await client.get(
+            "/attendance/team?start_date=2026-08-01&end_date=2026-08-31",
+            headers={"Authorization": f"Bearer {manager_token}"}
+        )
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_attendance_date_range_filtering(self, client, employee_token):
+        """Test date range filtering works"""
+        response = await client.get(
+            "/attendance/me?start_date=2026-08-20&end_date=2026-08-22",
+            headers={"Authorization": f"Bearer {employee_token}"}
+        )
+        assert response.status_code == 200
+        assert isinstance(response.json()["data"], list)
