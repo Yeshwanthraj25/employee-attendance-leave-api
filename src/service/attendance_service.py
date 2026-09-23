@@ -22,6 +22,7 @@ class AttendanceService:
             except AppException:
                 raise
             except Exception as e :
+                print(f'str(e)')
                 raise AppException("attendance_service","check_in_service",500,"Internal Error",str(e))
 
         async def check_out_service(self,db,emp_id):
@@ -33,7 +34,7 @@ class AttendanceService:
                         raise AppException("attendance_service","check_out_service",409,"user already check out",None)
                     else :
                         log_id = today_log.log_id
-                        updated = await  self.leave_repo.update_attendance_log(db,log_id)  
+                        updated = await  self.attendance_repo.update_attendance_log(db,log_id)  
                     response = CheckOut(
                     log_id = str(updated.log_id),
                     emp_id =  str(updated.emp_id),

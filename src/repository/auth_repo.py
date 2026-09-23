@@ -4,7 +4,7 @@ from src.repository.schema.schema import Employee,LogAttendance,Department,Leave
 from src.models.dto.exception  import AppException
 
 class AuthRepo:
-    async def get_user(db,emp_id):
+    async def get_user(self,db,emp_id):
         try:
             query = select(Employee).where(Employee.emp_id ==  emp_id)
             result  = await db.execute(query)
@@ -16,7 +16,7 @@ class AuthRepo:
             raise AppException("auth_repo","get_user",500,"DB error ",str(e)
                             )
 
-    async def get_user_by_email(db,email):
+    async def get_user_by_email(self,db,email):
         try :
             query = select(Employee).where (Employee.email_id == email )
             result = await db.execute(query)
@@ -25,7 +25,7 @@ class AuthRepo:
         except Exception as e :
             raise AppException("auth_repo","get_user_by_email",500,"DB error ",str(e))
 
-    async def create_user(db,email_id,password,phone_number,dep_id,role):
+    async def create_user(self,db,email_id,password,phone_number,dep_id,role):
         try:
             insert = Employee(email_id=email_id,password=password,phone_number =phone_number,manager_id = None ,dep_id=dep_id,role=role)
             db.add(insert)

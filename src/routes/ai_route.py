@@ -1,21 +1,24 @@
 from fastapi import APIRouter, Depends
-from src.core.dependencies import get_current_user
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.core.dependencies import OAuth
+from  src.repository.Database import get_db
 from src.service.ai_service import ai_service
 from src.utilize.response_helper import API_response
 from fastapi.responses import JSONResponse
-from src.core.error_handler import handle_errors
 
 router = APIRouter(prefix="/api/ai", tags=["AI"])
+oauth = OAuth()
 
 @router.post("/query")
-@handle_errors
-async def query(question: str, current_user=Depends(get_current_user)):
+async def query(
+    question: str,
+    current_user=Depends(oauth.get_current_user)
+):
     """Answer natural language question using AI"""
-    # Call service method
-    answer = await ai_service.answer_query(question)
+    result = await ai_service.answer_query(question)
     
     api_response = API_response(
-        {"answer": answer},
+        {"answer": result.response},
         200,
         "Query answered successfully",
         "success"
@@ -23,14 +26,16 @@ async def query(question: str, current_user=Depends(get_current_user)):
     return JSONResponse(status_code=200, content=api_response.model_dump(mode='json'))
 
 @router.post("/leave-insights")
-@handle_errors
-async def leave_insights(emp_id: str, current_user=Depends(get_current_user)):
-    """Generate AI insights about employee's leaves"""
-    # Call service method
-    insights = await ai_service.generate_leave_insights(emp_id)
+async def leave_insights(
+    emp_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(oauth.get_current_user)
+):
+    """Generate detailed AI insights about employee's leaves"""
+    result = await ai_service.generate_leave_insights(db, emp_id)
     
     api_response = API_response(
-        {"insights": insights},
+        result,  # ← Returns structured dict
         200,
         "Leave insights generated successfully",
         "success"
@@ -38,15 +43,15 @@ async def leave_insights(emp_id: str, current_user=Depends(get_current_user)):
     return JSONResponse(status_code=200, content=api_response.model_dump(mode='json'))
 
 @router.post("/attendance-analysis")
-@handle_errors
 async def attendance_analysis(
     start_date: str,
     end_date: str,
-    current_user=Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(oauth.get_current_user)
 ):
     """Analyze team attendance using AI"""
     
-    # Check role - only managers and admins
+    # Check role
     if current_user.role not in ['manager', 'admin']:
         api_response = API_response(
             {},
@@ -56,11 +61,10 @@ async def attendance_analysis(
         )
         return JSONResponse(status_code=403, content=api_response.model_dump(mode='json'))
     
-    # Call service method
-    analysis = await ai_service.analyze_attendance(start_date, end_date)
+    result = await ai_service.analyze_attendance(db, start_date, end_date)
     
     api_response = API_response(
-        {"analysis": analysis},
+        result,  # ← Returns structured dict
         200,
         "Attendance analysis generated successfully",
         "success"

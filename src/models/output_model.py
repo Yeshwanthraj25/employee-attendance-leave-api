@@ -126,6 +126,25 @@ class LeaveBalance(BaseModel):
     casual_leave_remaining: int 
     year: datetime
 
+class AIResponse(BaseModel):
+    response: str
+
+class LeaveInsightResponse(BaseModel):
+    employee_id: str
+    total_leaves: int
+    breakdown_by_type: dict[str, int]
+    breakdown_by_reason: dict[str, int]
+    status_summary: dict[str, int]
+    analysis: str
+    recommendations: list[str]
+
+class AttendanceAnalysisResponse(BaseModel):
+    period: str
+    total_records: int
+    attendance_percentage: float
+    patterns_identified: list[str]
+    analysis: str
+    recommendations: list[str]
 
 CheckIn.model_rebuild()
 CheckOut.model_rebuild()

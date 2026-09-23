@@ -1,4 +1,4 @@
-from src.repository.auth_repo import get_user_by_email,create_user
+from src.repository.auth_repo import AuthRepo
 from src.models.dto.exception import AppException
 from src.core.security import create_token,refresh_token,verify_token
 from src.repository.auth_repo import AuthRepo
@@ -9,10 +9,10 @@ from src.models.output_model import RegisterResponse,LoginResponse,RefreshToken
 
 class AuthService:
         def __init__(self):
-            self.authrepo = AuthRepo()
+            self.auth_repo = AuthRepo()
         async  def register_service(self,db,email_id,password,phone_number,dep_id,role):
             try:
-                user_checked = await get_user_by_email(db,email_id)
+                user_checked = await self.auth_repo.get_user_by_email(db,email_id)
                 if user_checked is not None:
                     raise AppException("auth_service","register_user",409,"User already exist",None)
                 gen_pass = bcrypt.gensalt(rounds=12)
@@ -31,7 +31,7 @@ class AuthService:
 
         async def login_service(self,db,email_id,password):
             try:
-                user_checked = await get_user_by_email(db,email_id)
+                user_checked = await self.auth_repo.get_user_by_email(db,email_id)
                 if user_checked is None:
                         raise AppException("auth_service","login_user",401,"Invalid creditial",None)
                 if not bcrypt.checkpw(password.encode(),user_checked.password.encode()):

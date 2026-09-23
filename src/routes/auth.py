@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from  src.repository.Database import get_db
 from src.models.dto.exception import AppException
 from src.repository.error_repo import error_insert
-from src.core.dependencies import get_current_user
+from src.core.dependencies import OAuth
 from  src.utilize.response_helper import API_response
 from uuid import uuid4
 from datetime import datetime
@@ -14,7 +14,7 @@ from src.core.error_handler import handle_errors
 
 router = APIRouter(prefix ="/auth",tags=["Auth"])
 
-
+oauth = OAuth()
 @router.post("/register" )
 @handle_errors
 async def register(request:RegisterRequest,db = Depends(get_db)) :
@@ -44,7 +44,7 @@ async def refresh_token(request:RefreshToken ,db = Depends(get_db)) :
 
 @router.get("/me")
 @handle_errors
-async def auth(db = Depends(get_db),current_user = Depends(get_current_user)):
+async def auth(db = Depends(get_db),current_user = Depends(oauth.get_current_user)):
                 user_dict = {
                                 "emp_id": str(current_user.emp_id),
                                 "email_id": current_user.email_id,

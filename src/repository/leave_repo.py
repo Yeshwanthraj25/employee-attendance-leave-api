@@ -4,7 +4,7 @@ from src.models.dto.exception  import AppException
 from datetime import date 
 
 class LeaveRepo:
-    async def create_leave_request(db,emp_id,leave_type,leave_reason,start_date,end_date):
+    async def create_leave_request(self,db,emp_id,leave_type,leave_reason,start_date,end_date):
         try :
             request = LeaveManagement(emp_id = emp_id , leave_type = leave_type,leave_reason = leave_reason, start_date =start_date,end_date = end_date,status = 'pending')
             db.add(request)
@@ -15,7 +15,7 @@ class LeaveRepo:
             raise AppException("leave_repo","create_leave_request",500,"Internal error",str(e))
 
 
-    async def get_leave_by_id(db, leave_id):
+    async def get_leave_by_id(self,db, leave_id):
         try :
             query = select(LeaveManagement).where(LeaveManagement.leave_id == leave_id)
             result = await db.execute(query)
@@ -25,7 +25,7 @@ class LeaveRepo:
         except Exception as e:
             raise AppException("leave_repo","get_leave_by_id",500,"Internal error",str(e))
 
-    async def get_leave_history(db, emp_id, status=None, year=None):
+    async def get_leave_history(self,db, emp_id, status=None, year=None):
         try :
             condition =(LeaveManagement.emp_id == emp_id) 
             if status:
@@ -39,7 +39,7 @@ class LeaveRepo:
         except Exception as e:
             raise AppException("leave_repo","get_leave_history",500,"Internal error",str(e))
 
-    async def update_leave_status(db, leave_id, status):
+    async def update_leave_status(self,db, leave_id, status):
         try :
             query = update(LeaveManagement).where(LeaveManagement.leave_id == leave_id).values(status = status,updated_at = date.today() )
             await db.execute(query)
@@ -48,7 +48,7 @@ class LeaveRepo:
         except Exception as e:
             raise AppException("leave_repo","update_leave_status",500,"Internal error",str(e))
 
-    async def update_leave_quote(db, emp_id, leave_type, days_to_deduct, year):
+    async def update_leave_quote(self,db, emp_id, leave_type, days_to_deduct, year):
         try :
             if leave_type =='sick':
                 column_to_update = LeaveQuote.sick_leave_remaining
@@ -63,7 +63,7 @@ class LeaveRepo:
             raise AppException("leave_repo","update_leave_status",500,"Internal error",str(e))
 
 
-    async def get_leave_quote(db,emp_id,year):
+    async def get_leave_quote(self,db,emp_id,year):
         try:
             query = select(LeaveQuote).where((LeaveQuote.emp_id == emp_id) & (LeaveQuote.year ==year))
             result = await db.execute(query)
@@ -73,7 +73,7 @@ class LeaveRepo:
                 print(f" debug {str(e)}")
                 raise AppException("leave_repo","get_leave_quote",500,"Internal error DB repo error ",str(e))
 
-    async def get_team_leave_history(db,manager_id,status=None,year = None ):
+    async def get_team_leave_history(self,db,manager_id,status=None,year = None ):
         try:
         
             condition = (Employee.manager_id == manager_id) 
@@ -89,7 +89,7 @@ class LeaveRepo:
         except Exception as e:
                 raise AppException("leave_repo","get_team_leave_history",500,"Internal error",str(e))
 
-    async def insert_leave_quote(db, emp_id, year, sick_leave_allotted, sick_leave_remaining, casual_leave_allotted, casual_leave_remaining):
+    async def insert_leave_quote(self,db, emp_id, year, sick_leave_allotted, sick_leave_remaining, casual_leave_allotted, casual_leave_remaining):
         try:
             query = LeaveQuote(
                 emp_id=emp_id,
